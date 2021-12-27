@@ -1,0 +1,11 @@
+# Dependency directories
+node_modules
+
+# Compiled output
+build
+
+# Environment
+.env
+
+# OS
+.DS_Store

@@ -1,0 +1,13 @@
+@font-face {
+  font-family: "Carter One";
+  src: local("Carter One"), url(./fonts/CarterOne-Regular.ttf) format("truetype");
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+}

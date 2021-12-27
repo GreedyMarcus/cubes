@@ -1,0 +1,23 @@
+{
+  "name": "cubes",
+  "version": "1.0.0",
+  "author": "Domahidi Márk",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GreedyMarcus/cubes"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
