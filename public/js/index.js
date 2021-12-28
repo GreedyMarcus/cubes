@@ -26,8 +26,24 @@ function startRendering() {
 
   clearScreen()
 
-  state.players.forEach(({ cube }) => {
-    Cube.render(ctx, cube)
+  state.players.forEach((currentPlayer, _, players) => {
+    // Dead players should not be rendered
+    if (currentPlayer.alive) {
+      Cube.render(ctx, currentPlayer.cube)
+
+      players.forEach((player) => {
+        // Skip the current player and dead players
+        if (player.id !== currentPlayer.id && player.alive) {
+          // Both player die if their cubes collide
+          if (Cube.isCollide(currentPlayer.cube, player.cube)) {
+            currentPlayer.alive = false
+            player.alive = false
+
+            updateGameState()
+          }
+        }
+      })
+    }
   })
 }
 
@@ -121,16 +137,20 @@ function handlePlayerMove({ clientX, clientY }) {
     state.players[playerIndex].cube.velocity.y = Math.sin(angle)
 
     if (state.status === GameStatus.STARTED) {
-      socket.emit(
-        GameEvents.GAME_STATE_UPDATE,
-        JSON.stringify({
-          data: {
-            state: convertToRelativeViewport(state)
-          }
-        })
-      )
+      updateGameState()
     }
   }
+}
+
+function updateGameState() {
+  socket.emit(
+    GameEvents.GAME_STATE_UPDATE,
+    JSON.stringify({
+      data: {
+        state: convertToRelativeViewport(state)
+      }
+    })
+  )
 }
 
 function showPanel() {

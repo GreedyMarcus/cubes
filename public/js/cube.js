@@ -24,4 +24,13 @@ class Cube {
     ctx.fillStyle = cube.color
     ctx.fillRect(cube.position.x, cube.position.y, cube.size, cube.size)
   }
+
+  static isCollide(cube1, cube2) {
+    return (
+      cube1.position.x < cube2.position.x + cube2.size &&
+      cube1.position.x + cube1.size > cube2.position.x &&
+      cube1.position.y < cube2.position.y + cube2.size &&
+      cube1.position.y + cube1.size > cube2.position.y
+    )
+  }
 }
