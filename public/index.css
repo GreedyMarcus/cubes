@@ -1,5 +1,8 @@
 :root {
   --canvas-bg-color: #141414;
+  --button-bg-color-main: #2a64e5;
+  --button-bg-color-hover: #1846ad;
+  --button-bg-color-active: #1846ad;
 }
 
 @font-face {
@@ -12,10 +15,47 @@ html {
 }
 
 body {
-  height: 100%;
   margin: 0;
+  height: 100%;
 }
 
 canvas {
   background-color: var(--canvas-bg-color);
+}
+
+#overlay {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+#panel {
+  visibility: hidden;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 8px 16px;
+}
+
+#start-button {
+  border: none;
+  border-radius: 8px;
+  background-color: var(--button-bg-color-main);
+  color: #fff;
+  padding: 8px 16px;
+  width: 160px;
+  font-family: "Carter One";
+  font-size: 20px;
+}
+
+#start-button:hover {
+  cursor: pointer;
+  background-color: var(--button-bg-color-hover);
+}
+
+#start-button:active {
+  cursor: pointer;
+  background-color: var(--button-bg-color-active);
 }

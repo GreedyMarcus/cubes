@@ -4,15 +4,35 @@ const GameEvents = Object.freeze({
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
   USER_CONNECTED: "user-connected",
+  GAME_STARTED: "game-started",
   GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
 
+const GameStatus = Object.freeze({
+  LOBBY: "lobby",
+  STARTED: "started",
+  FINISHED: "finished"
+})
+
 class Game {
-  constructor() {
+  constructor(io) {
+    this.io = io
     this.state = {
+      status: GameStatus.LOBBY,
       players: []
     }
+  }
+
+  setup() {
+    // Handle a socket connection request from the web client
+    this.io.on(GameEvents.CONNECTION, (socket) => {
+      const playerId = this.connectPlayer(socket)
+
+      socket.on(GameEvents.DISCONNECT, () => this.disconnectPlayer(socket, playerId))
+      socket.on(GameEvents.GAME_STARTED, () => this.startGame(socket))
+      socket.on(GameEvents.GAME_STATE_UPDATE, (payload) => this.updateState(socket, payload))
+    })
   }
 
   connectPlayer(socket) {
@@ -43,6 +63,11 @@ class Game {
     }
   }
 
+  startGame(socket) {
+    this.state.status = GameStatus.STARTED
+    this.broadcastGameStateChanged(socket)
+  }
+
   updateState(socket, payload) {
     const { data } = JSON.parse(payload)
 
@@ -66,4 +91,4 @@ class Game {
   }
 }
 
-module.exports = { GameEvents, Game }
+module.exports = { Game }
