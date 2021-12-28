@@ -1,2 +1,6 @@
 #!/bin/bash
-uglifyjs public/js/game.js public/js/index.js -o public/index.min.js
+uglifyjs \
+  public/js/cube.js \
+  public/js/game.js \
+  public/js/index.js \
+  -o public/index.min.js

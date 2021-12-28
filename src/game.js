@@ -1,4 +1,4 @@
-const { Player } = require("./player")
+const { Player } = require("./entities/player")
 
 const GameEvents = Object.freeze({
   CONNECTION: "connection",
@@ -58,7 +58,4 @@ class Game {
   }
 }
 
-module.exports = {
-  GameEvents,
-  Game
-}
+module.exports = { GameEvents, Game }

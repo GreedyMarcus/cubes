@@ -1,3 +1,7 @@
+:root {
+  --canvas-bg-color: #141414;
+}
+
 @font-face {
   font-family: "Carter One";
   src: local("Carter One"), url(./fonts/CarterOne-Regular.ttf) format("truetype");
@@ -10,4 +14,8 @@ html {
 body {
   height: 100%;
   margin: 0;
+}
+
+canvas {
+  background-color: var(--canvas-bg-color);
 }
