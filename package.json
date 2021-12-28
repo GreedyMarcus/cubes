@@ -11,14 +11,16 @@
     "node": "16.x"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "minify": "bash minify.sh",
+    "start": "npm run minify && node src/index.js",
+    "dev": "nodemon --ignore public/index.min.js --exec 'npm run minify && node src/index.js'"
   },
   "dependencies": {
     "express": "^4.17.2",
     "socket.io": "^4.4.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "uglify-js": "^3.14.5"
   }
 }
