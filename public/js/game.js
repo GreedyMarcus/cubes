@@ -1,5 +1,6 @@
 const GameEvents = Object.freeze({
   USER_CONNECTED: "user-connected",
+  GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
 
@@ -20,9 +21,9 @@ class Game {
     this.animationId = requestAnimationFrame(this.startRendering)
 
     this.clearScreen()
+
     this.state.players.forEach(({ cube }) => {
-      // TODO: Update cube position before drawing it
-      Cube.draw(this.ctx, cube)
+      Cube.render(this.ctx, cube)
     })
   }
 
@@ -65,7 +66,7 @@ class Game {
     }
   }
 
-  handleUserConnected = (payload) => {
+  handleUserConnected(payload) {
     const { data } = JSON.parse(payload)
 
     this.playerId = data.playerId
@@ -74,18 +75,40 @@ class Game {
     this.startRendering()
   }
 
-  handleGameStateChanged = (payload) => {
+  handleGameStateChanged(payload) {
     const { data } = JSON.parse(payload)
 
     this.state = this.convertFromRelativeViewport(data.state)
   }
 
-  handleResize = () => {
+  handleResize() {
     const temp = this.convertToRelativeViewport(this.state)
 
     this.ctx.canvas.width = window.innerWidth
     this.ctx.canvas.height = window.innerHeight
 
     this.state = this.convertFromRelativeViewport(temp)
+  }
+
+  handlePlayerMove(socket, mouseX, mouseY) {
+    const playerIndex = this.state.players.findIndex(({ id }) => id === this.playerId)
+    if (playerIndex !== -1) {
+      const angle = Math.atan2(
+        mouseY - this.state.players[playerIndex].cube.position.y,
+        mouseX - this.state.players[playerIndex].cube.position.x
+      )
+
+      this.state.players[playerIndex].cube.velocity.x = Math.cos(angle)
+      this.state.players[playerIndex].cube.velocity.y = Math.sin(angle)
+
+      socket.emit(
+        GameEvents.GAME_STATE_UPDATE,
+        JSON.stringify({
+          data: {
+            state: this.convertToRelativeViewport(this.state)
+          }
+        })
+      )
+    }
   }
 }

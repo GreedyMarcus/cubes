@@ -4,6 +4,7 @@ const GameEvents = Object.freeze({
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
   USER_CONNECTED: "user-connected",
+  GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
 
@@ -40,6 +41,13 @@ class Game {
       this.state.players.splice(playerIndex, 1)
       this.broadcastGameStateChanged(socket)
     }
+  }
+
+  updateState(socket, payload) {
+    const { data } = JSON.parse(payload)
+
+    this.state = data.state
+    this.broadcastGameStateChanged(socket)
   }
 
   broadcastGameStateChanged(socket) {

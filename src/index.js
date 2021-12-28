@@ -26,4 +26,8 @@ io.on(GameEvents.CONNECTION, (socket) => {
   socket.on(GameEvents.DISCONNECT, () => {
     game.disconnectPlayer(socket, playerId)
   })
+
+  socket.on(GameEvents.GAME_STATE_UPDATE, (payload) => {
+    game.updateState(socket, payload)
+  })
 })
