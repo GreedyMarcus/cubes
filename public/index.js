@@ -1,1 +1,1 @@
-console.log("Cubes")
+const socket = io()
