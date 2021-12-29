@@ -1,4 +1,3 @@
-const panel = document.querySelector("#panel")
 const startButton = document.querySelector("#start-button")
 const canvas = document.querySelector("canvas")
 const ctx = canvas.getContext("2d")
@@ -8,28 +7,30 @@ let animationId = null
 let playerId = null
 let state = null
 
-function setup() {
-  ctx.canvas.width = window.innerWidth
-  ctx.canvas.height = window.innerHeight
-}
-
 function startGame() {
   state.status = GameStatus.STARTED
   socket.emit(GameEvents.GAME_STARTED)
 
-  hidePanel()
+  GameScreen.displayPanel(false)
   startRendering()
 }
 
 function startRendering() {
   animationId = requestAnimationFrame(startRendering)
 
-  clearScreen()
+  GameScreen.clear(ctx)
 
   state.players.forEach((currentPlayer, _, players) => {
     // Dead players should not be rendered
     if (currentPlayer.alive) {
       Cube.render(ctx, currentPlayer.cube)
+
+      currentPlayer.projectiles.forEach((projectile) => {
+        // Skip unfired projectiles
+        if (projectile.fired) {
+          Projectile.render(ctx, projectile)
+        }
+      })
 
       players.forEach((player) => {
         // Skip the current player and dead players
@@ -39,7 +40,7 @@ function startRendering() {
             currentPlayer.alive = false
             player.alive = false
 
-            updateGameState()
+            emitUpdateGameState()
           }
         }
       })
@@ -47,42 +48,30 @@ function startRendering() {
   })
 }
 
-function clearScreen() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+function emitUpdateGameState() {
+  socket.emit(
+    GameEvents.GAME_STATE_UPDATE,
+    JSON.stringify({
+      data: {
+        state: GameScreen.convertToRelativeViewport(ctx, state)
+      }
+    })
+  )
 }
 
-function convertFromRelativeViewport(state) {
-  return {
-    ...state,
-    players: state.players.map((player) => ({
-      ...player,
-      cube: {
-        ...player.cube,
-        size: ctx.canvas.width * player.cube.size,
-        position: {
-          x: ctx.canvas.width * player.cube.position.x,
-          y: ctx.canvas.height * player.cube.position.y
-        }
-      }
-    }))
-  }
-}
+function fireProjectile() {
+  // Find current player
+  const playerIndex = state.players.findIndex(({ id }) => id === playerId)
+  if (playerIndex !== -1) {
+    // Check if player has any projectile left
+    const projectileIndex = state.players[playerIndex].projectiles.findIndex(({ fired }) => !fired)
+    if (projectileIndex !== -1) {
+      const projectile = state.players[playerIndex].projectiles[projectileIndex]
+      const cube = state.players[playerIndex].cube
 
-function convertToRelativeViewport(state) {
-  return {
-    ...state,
-    players: state.players.map((player) => ({
-      ...player,
-      cube: {
-        ...player.cube,
-        size: (1 / ctx.canvas.width) * player.cube.size,
-        position: {
-          x: (1 / ctx.canvas.width) * player.cube.position.x,
-          y: (1 / ctx.canvas.height) * player.cube.position.y
-        }
-      }
-    }))
+      Projectile.fire(projectile, cube)
+      emitUpdateGameState()
+    }
   }
 }
 
@@ -90,14 +79,14 @@ function handleUserConnected(payload) {
   const { data } = JSON.parse(payload)
 
   playerId = data.playerId
-  state = convertFromRelativeViewport(data.state)
+  state = GameScreen.convertFromRelativeViewport(ctx, data.state)
 
   if (state.status === GameStatus.LOBBY) {
-    showPanel()
+    GameScreen.displayPanel(true)
   }
 
   if (state.status === GameStatus.STARTED) {
-    hidePanel()
+    GameScreen.displayPanel(false)
     startRendering()
   }
 }
@@ -108,65 +97,46 @@ function handleGameStateChanged(payload) {
   const startedInServer = data.state.status === GameStatus.STARTED
   const startedInLocal = state.status === GameStatus.STARTED
 
-  state = convertFromRelativeViewport(data.state)
+  state = GameScreen.convertFromRelativeViewport(ctx, data.state)
 
   if (startedInServer && !startedInLocal) {
-    hidePanel()
+    GameScreen.displayPanel(false)
     startRendering()
   }
 }
 
 function handleResize() {
-  const temp = convertToRelativeViewport(state)
-
-  ctx.canvas.width = window.innerWidth
-  ctx.canvas.height = window.innerHeight
-
-  state = convertFromRelativeViewport(temp)
+  state = GameScreen.resize(ctx, state)
 }
 
 function handlePlayerMove({ clientX, clientY }) {
-  const playerIndex = state.players.findIndex(({ id }) => id === playerId)
-  if (playerIndex !== -1) {
-    const angle = Math.atan2(
-      clientY - state.players[playerIndex].cube.position.y,
-      clientX - state.players[playerIndex].cube.position.x
-    )
+  if (state.status === GameStatus.STARTED) {
+    const playerIndex = state.players.findIndex(({ id }) => id === playerId)
+    if (playerIndex !== -1) {
+      const target = { x: clientX, y: clientY }
+      const cube = state.players[playerIndex].cube
 
-    state.players[playerIndex].cube.velocity.x = Math.cos(angle)
-    state.players[playerIndex].cube.velocity.y = Math.sin(angle)
-
-    if (state.status === GameStatus.STARTED) {
-      updateGameState()
+      Cube.changeDirection(target, cube)
+      emitUpdateGameState()
     }
   }
 }
 
-function updateGameState() {
-  socket.emit(
-    GameEvents.GAME_STATE_UPDATE,
-    JSON.stringify({
-      data: {
-        state: convertToRelativeViewport(state)
-      }
-    })
-  )
+function handlePlayerAction({ code }) {
+  switch (code) {
+    case "Space":
+      fireProjectile()
+      break
+  }
 }
 
-function showPanel() {
-  panel.style.visibility = "visible"
-}
-
-function hidePanel() {
-  panel.style.visibility = "hidden"
-}
-
-setup()
+GameScreen.setup(ctx)
 
 socket.on(GameEvents.USER_CONNECTED, handleUserConnected)
 socket.on(GameEvents.GAME_STATE_CHANGED, handleGameStateChanged)
 
 addEventListener("resize", handleResize)
 addEventListener("mousemove", handlePlayerMove)
+addEventListener("keydown", handlePlayerAction)
 
 startButton.addEventListener("click", () => startGame(socket))

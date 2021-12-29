@@ -8,24 +8,9 @@ class Cube {
   constructor() {
     this.size = Cube.DEFAULT_SIZE
     this.color = Cube.DEFAULT_COLOR
-    this.position = Cube.generateRandomPosition()
+    this.position = Point.generateRandomPoint()
     this.velocity = new Point(0, 0)
     this.velocityMultiplier = Cube.DEFAULT_VELOCITY_MULTIPLIER
-  }
-
-  update(cube) {
-    this.size = cube.size
-    this.color = cube.color
-    this.position = cube.position
-    this.velocity = cube.velocity
-    this.velocityMultiplier = cube.velocityMultiplier
-  }
-
-  static generateRandomPosition() {
-    const x = Point.generateRandomCoord()
-    const y = Point.generateRandomCoord()
-
-    return new Point(x, y)
   }
 }
 
