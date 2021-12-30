@@ -21,30 +21,37 @@ function startRendering() {
   GameScreen.clear(ctx)
 
   state.players.forEach((currentPlayer, _, players) => {
-    // Dead players should not be rendered
-    if (currentPlayer.alive) {
-      Cube.render(ctx, currentPlayer.cube)
+    if (!currentPlayer.alive) return
 
-      currentPlayer.projectiles.forEach((projectile) => {
-        // Skip unfired projectiles
-        if (projectile.fired) {
-          Projectile.render(ctx, projectile)
-        }
-      })
+    Cube.render(ctx, currentPlayer.cube)
+
+    currentPlayer.projectiles.forEach((projectile) => {
+      if (!projectile.fired) return
+
+      Projectile.render(ctx, projectile)
 
       players.forEach((player) => {
-        // Skip the current player and dead players
-        if (player.id !== currentPlayer.id && player.alive) {
-          // Both player die if their cubes collide
-          if (Cube.isCollide(currentPlayer.cube, player.cube)) {
-            currentPlayer.alive = false
-            player.alive = false
+        if (player.id === projectile.createdBy || !player.alive) return
 
-            emitUpdateGameState()
-          }
+        if (Projectile.isCollide(projectile, player.cube)) {
+          player.alive = false
+          Projectile.reload(projectile)
+
+          emitUpdateGameState()
         }
       })
-    }
+    })
+
+    players.forEach((player) => {
+      if (player.id === currentPlayer.id || !player.alive) return
+
+      if (Cube.isCollide(currentPlayer.cube, player.cube)) {
+        currentPlayer.alive = false
+        player.alive = false
+
+        emitUpdateGameState()
+      }
+    })
   })
 }
 
@@ -60,19 +67,17 @@ function emitUpdateGameState() {
 }
 
 function fireProjectile() {
-  // Find current player
   const playerIndex = state.players.findIndex(({ id }) => id === playerId)
-  if (playerIndex !== -1) {
-    // Check if player has any projectile left
-    const projectileIndex = state.players[playerIndex].projectiles.findIndex(({ fired }) => !fired)
-    if (projectileIndex !== -1) {
-      const projectile = state.players[playerIndex].projectiles[projectileIndex]
-      const cube = state.players[playerIndex].cube
+  if (playerIndex === -1) return
 
-      Projectile.fire(projectile, cube)
-      emitUpdateGameState()
-    }
-  }
+  const projectileIndex = state.players[playerIndex].projectiles.findIndex(({ fired }) => !fired)
+  if (projectileIndex === -1) return
+
+  const projectile = state.players[playerIndex].projectiles[projectileIndex]
+  const cube = state.players[playerIndex].cube
+
+  Projectile.fire(projectile, cube)
+  emitUpdateGameState()
 }
 
 function handleUserConnected(payload) {
@@ -112,13 +117,13 @@ function handleResize() {
 function handlePlayerMove({ clientX, clientY }) {
   if (state.status === GameStatus.STARTED) {
     const playerIndex = state.players.findIndex(({ id }) => id === playerId)
-    if (playerIndex !== -1) {
-      const target = { x: clientX, y: clientY }
-      const cube = state.players[playerIndex].cube
+    if (playerIndex === -1) return
 
-      Cube.changeDirection(target, cube)
-      emitUpdateGameState()
-    }
+    const target = { x: clientX, y: clientY }
+    const cube = state.players[playerIndex].cube
+
+    Cube.changeDirection(target, cube)
+    emitUpdateGameState()
   }
 }
 

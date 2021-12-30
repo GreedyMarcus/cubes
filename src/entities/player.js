@@ -6,7 +6,7 @@ class Player {
     this.id = id
     this.alive = true
     this.cube = new Cube()
-    this.projectiles = new Array(10).fill(new Projectile())
+    this.projectiles = new Array(10).fill(new Projectile(id, this.cube.color))
   }
 }
 
