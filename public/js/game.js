@@ -1,5 +1,6 @@
 const GameEvents = Object.freeze({
   USER_CONNECTED: "user-connected",
+  TOO_MANY_PLAYERS: "too-many-players",
   GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
@@ -82,14 +83,23 @@ class GameScreen {
 
   static displayPanel(display) {
     const panel = document.querySelector("#panel")
-    panel.style.visibility = display ? "visible" : "hidden"
+    panel.style.display = display ? "block" : "none"
   }
 
-  static displayWinner(display, playerId) {
-    const winner = document.querySelector("#winner")
+  static hideStartButton() {
+    const startButton = document.querySelector("#start-button")
+    startButton.style.display = "none"
+  }
 
-    winner.textContent = playerId ? `${playerId} won` : "Draw"
-    winner.style.visibility = display ? "visible" : "hidden"
-    winner.style.margin = display ? "8px" : "0px"
+  static displayMessage(display, text) {
+    const message = document.querySelector("#message")
+
+    message.textContent = text
+    message.style.display = display ? "block" : "none"
+    message.style.margin = display ? "8px" : "0px"
+  }
+
+  static printWinner(winner) {
+    return winner ? `${winner} won` : "Draw"
   }
 }

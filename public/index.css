@@ -33,7 +33,7 @@ canvas {
 }
 
 #panel {
-  visibility: hidden;
+  display: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,8 +42,8 @@ canvas {
   padding: 8px 16px;
 }
 
-#winner {
-  visibility: hidden;
+#message {
+  display: none;
   margin: 0;
   font-family: "Carter One";
   font-size: 22px;

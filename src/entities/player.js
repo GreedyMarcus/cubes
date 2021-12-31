@@ -5,15 +5,11 @@ class Player {
   static colors = ["white", "salmon", "gold", "lime", "aqua", "magenta"]
 
   constructor(id) {
-    this.id = id ?? this.generatePlayerId()
+    this.id = id
     this.alive = true
     this.color = Player.getColor()
     this.cube = new Cube(this.color)
-    this.projectiles = new Array(10).fill(new Projectile(this.id, this.cube.color))
-  }
-
-  generatePlayerId() {
-    return Math.random().toString(36).slice(2)
+    this.projectiles = new Array(10).fill(new Projectile(id, this.cube.color))
   }
 
   static getColor() {

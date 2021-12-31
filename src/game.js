@@ -4,6 +4,7 @@ const GameEvents = Object.freeze({
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
   USER_CONNECTED: "user-connected",
+  TOO_MANY_PLAYERS: "too-many-players",
   GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
@@ -15,6 +16,8 @@ const GameStatus = Object.freeze({
 })
 
 class Game {
+  static PLAYER_LIMIT = 6
+
   constructor(io) {
     this.io = io
     this.state = {
@@ -35,7 +38,12 @@ class Game {
   }
 
   connectPlayer(socket) {
-    const player = new Player()
+    if (this.state.players.length === Game.PLAYER_LIMIT) {
+      socket.emit(GameEvents.TOO_MANY_PLAYERS)
+      return
+    }
+
+    const player = new Player(this.generatePlayerId())
     this.state.players.push(player)
 
     socket.emit(
@@ -93,6 +101,10 @@ class Game {
     } else {
       socket.broadcast.emit(GameEvents.GAME_STATE_CHANGED, payload)
     }
+  }
+
+  generatePlayerId() {
+    return Math.random().toString(36).slice(2)
   }
 }
 

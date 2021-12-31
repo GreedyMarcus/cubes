@@ -11,7 +11,7 @@ function startGame() {
   state.status = GameStatus.STARTED
   updateGameState()
 
-  GameScreen.displayWinner(false)
+  GameScreen.displayMessage(false)
   GameScreen.displayPanel(false)
   startRendering()
 }
@@ -79,13 +79,12 @@ function checkEndGame() {
   const alivePlayers = state.players.filter((player) => player.alive)
 
   if (alivePlayers.length >= 2) return
-
   if (alivePlayers.length === 1) state.winner = alivePlayers[0].color
   if (alivePlayers.length === 0) state.winner = null
 
   state.status = GameStatus.FINISHED
 
-  GameScreen.displayWinner(true, state.winner)
+  GameScreen.displayMessage(true, GameScreen.printWinner(state.winner))
   GameScreen.displayPanel(true)
 
   stopRendering()
@@ -116,15 +115,21 @@ function handleUserConnected(payload) {
   }
 
   if (state.status === GameStatus.STARTED) {
-    GameScreen.displayWinner(false)
+    GameScreen.displayMessage(false)
     GameScreen.displayPanel(false)
     startRendering()
   }
 
   if (state.status === GameStatus.FINISHED) {
-    GameScreen.displayWinner(true, state.winner)
+    GameScreen.displayMessage(true, GameScreen.printWinner(state.winner))
     GameScreen.displayPanel(true)
   }
+}
+
+function handleTooManyPlayers() {
+  GameScreen.displayMessage(true, "Too many players")
+  GameScreen.displayPanel(true)
+  GameScreen.hideStartButton()
 }
 
 function handleGameStateChanged(payload) {
@@ -134,7 +139,7 @@ function handleGameStateChanged(payload) {
   const startedInLocal = state.status === GameStatus.STARTED
 
   if (startedInServer && !startedInLocal) {
-    GameScreen.displayWinner(false)
+    GameScreen.displayMessage(false)
     GameScreen.displayPanel(false)
     startRendering()
   }
@@ -143,7 +148,7 @@ function handleGameStateChanged(payload) {
   const finishedInLocal = state.status === GameStatus.FINISHED
 
   if (finishedInServer && !finishedInLocal) {
-    GameScreen.displayWinner(true, data.state.winner)
+    GameScreen.displayMessage(true, GameScreen.printWinner(data.state.winner))
     GameScreen.displayPanel(true)
     stopRendering()
   }
@@ -152,11 +157,13 @@ function handleGameStateChanged(payload) {
 }
 
 function handleResize() {
-  state = GameScreen.resize(ctx, state)
+  if (state) {
+    state = GameScreen.resize(ctx, state)
+  }
 }
 
 function handlePlayerMove({ clientX, clientY }) {
-  if (state.status !== GameStatus.STARTED) return
+  if (!state || state.status !== GameStatus.STARTED) return
 
   const playerIndex = state.players.findIndex(({ id }) => id === playerId)
   if (playerIndex === -1) return
@@ -169,7 +176,7 @@ function handlePlayerMove({ clientX, clientY }) {
 }
 
 function handlePlayerAction({ code }) {
-  if (state.status !== GameStatus.STARTED) return
+  if (!state || state.status !== GameStatus.STARTED) return
 
   switch (code) {
     case "Space":
@@ -181,6 +188,7 @@ function handlePlayerAction({ code }) {
 GameScreen.setup(ctx)
 
 socket.on(GameEvents.USER_CONNECTED, handleUserConnected)
+socket.on(GameEvents.TOO_MANY_PLAYERS, handleTooManyPlayers)
 socket.on(GameEvents.GAME_STATE_CHANGED, handleGameStateChanged)
 
 addEventListener("resize", handleResize)
