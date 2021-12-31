@@ -1,6 +1,5 @@
 const GameEvents = Object.freeze({
   USER_CONNECTED: "user-connected",
-  GAME_STARTED: "game-started",
   GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
@@ -17,8 +16,8 @@ class GameScreen {
     ctx.canvas.height = window.innerHeight
   }
 
-  static clear(ctx) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
+  static clear(ctx, full) {
+    ctx.fillStyle = full ? "#000" : "rgba(0, 0, 0, 0.1)"
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   }
 
@@ -84,5 +83,15 @@ class GameScreen {
   static displayPanel(display) {
     const panel = document.querySelector("#panel")
     panel.style.visibility = display ? "visible" : "hidden"
+  }
+
+  static displayWinner(display, playerId) {
+    const winner = document.querySelector("#winner")
+
+    winner.textContent = playerId ? `${playerId} won` : "Draw"
+    winner.style.visibility = display ? "visible" : "hidden"
+    winner.style.margin = display ? "8px" : "0px"
+
+    GameScreen.displayPanel(display)
   }
 }

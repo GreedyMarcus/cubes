@@ -9,7 +9,7 @@ let state = null
 
 function startGame() {
   state.status = GameStatus.STARTED
-  socket.emit(GameEvents.GAME_STARTED)
+  updateGameState()
 
   GameScreen.displayPanel(false)
   startRendering()
@@ -18,14 +18,16 @@ function startGame() {
 function startRendering() {
   animationId = requestAnimationFrame(startRendering)
 
-  GameScreen.clear(ctx)
+  GameScreen.clear(ctx, !animationId)
 
   state.players.forEach((currentPlayer, _, players) => {
+    if (!animationId) return
     if (!currentPlayer.alive) return
 
     Cube.render(ctx, currentPlayer.cube)
 
     currentPlayer.projectiles.forEach((projectile) => {
+      if (!animationId) return
       if (!projectile.fired) return
 
       Projectile.render(ctx, projectile)
@@ -35,9 +37,11 @@ function startRendering() {
 
         if (Projectile.isCollide(projectile, player.cube)) {
           player.alive = false
+
           Projectile.reload(projectile)
 
-          emitUpdateGameState()
+          checkEndGame()
+          updateGameState()
         }
       })
     })
@@ -49,13 +53,19 @@ function startRendering() {
         currentPlayer.alive = false
         player.alive = false
 
-        emitUpdateGameState()
+        checkEndGame()
+        updateGameState()
       }
     })
   })
 }
 
-function emitUpdateGameState() {
+function stopRendering() {
+  cancelAnimationFrame(animationId)
+  GameScreen.clear(ctx, true)
+}
+
+function updateGameState() {
   socket.emit(
     GameEvents.GAME_STATE_UPDATE,
     JSON.stringify({
@@ -64,6 +74,19 @@ function emitUpdateGameState() {
       }
     })
   )
+}
+
+function checkEndGame() {
+  const alivePlayers = state.players.filter((player) => player.alive)
+
+  if (alivePlayers.length >= 2) return
+
+  if (alivePlayers.length === 1) state.winner = alivePlayers[0].id
+  if (alivePlayers.length === 0) state.winner = null
+
+  state.status = GameStatus.FINISHED
+  GameScreen.displayWinner(true, state.winner)
+  stopRendering()
 }
 
 function fireProjectile() {
@@ -77,7 +100,7 @@ function fireProjectile() {
   const cube = state.players[playerIndex].cube
 
   Projectile.fire(projectile, cube)
-  emitUpdateGameState()
+  updateGameState()
 }
 
 function handleUserConnected(payload) {
@@ -94,6 +117,10 @@ function handleUserConnected(payload) {
     GameScreen.displayPanel(false)
     startRendering()
   }
+
+  if (state.status === GameStatus.FINISHED) {
+    GameScreen.displayWinner(state.winner)
+  }
 }
 
 function handleGameStateChanged(payload) {
@@ -102,12 +129,20 @@ function handleGameStateChanged(payload) {
   const startedInServer = data.state.status === GameStatus.STARTED
   const startedInLocal = state.status === GameStatus.STARTED
 
-  state = GameScreen.convertFromRelativeViewport(ctx, data.state)
-
   if (startedInServer && !startedInLocal) {
     GameScreen.displayPanel(false)
     startRendering()
   }
+
+  const finishedInServer = data.state.status === GameStatus.FINISHED
+  const finishedInLocal = state.status === GameStatus.FINISHED
+
+  if (finishedInServer && !finishedInLocal) {
+    GameScreen.displayWinner(true, data.state.winner)
+    stopRendering()
+  }
+
+  state = GameScreen.convertFromRelativeViewport(ctx, data.state)
 }
 
 function handleResize() {
@@ -115,19 +150,21 @@ function handleResize() {
 }
 
 function handlePlayerMove({ clientX, clientY }) {
-  if (state.status === GameStatus.STARTED) {
-    const playerIndex = state.players.findIndex(({ id }) => id === playerId)
-    if (playerIndex === -1) return
+  if (state.status !== GameStatus.STARTED) return
 
-    const target = { x: clientX, y: clientY }
-    const cube = state.players[playerIndex].cube
+  const playerIndex = state.players.findIndex(({ id }) => id === playerId)
+  if (playerIndex === -1) return
 
-    Cube.changeDirection(target, cube)
-    emitUpdateGameState()
-  }
+  const target = { x: clientX, y: clientY }
+  const cube = state.players[playerIndex].cube
+
+  Cube.changeDirection(target, cube)
+  updateGameState()
 }
 
 function handlePlayerAction({ code }) {
+  if (state.status !== GameStatus.STARTED) return
+
   switch (code) {
     case "Space":
       fireProjectile()

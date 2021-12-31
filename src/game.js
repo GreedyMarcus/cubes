@@ -4,7 +4,6 @@ const GameEvents = Object.freeze({
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
   USER_CONNECTED: "user-connected",
-  GAME_STARTED: "game-started",
   GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })
@@ -20,6 +19,7 @@ class Game {
     this.io = io
     this.state = {
       status: GameStatus.LOBBY,
+      winner: null,
       players: []
     }
   }
@@ -30,14 +30,12 @@ class Game {
       const playerId = this.connectPlayer(socket)
 
       socket.on(GameEvents.DISCONNECT, () => this.disconnectPlayer(socket, playerId))
-      socket.on(GameEvents.GAME_STARTED, () => this.startGame(socket))
       socket.on(GameEvents.GAME_STATE_UPDATE, (payload) => this.updateState(socket, payload))
     })
   }
 
   connectPlayer(socket) {
     const player = new Player(this.generatePlayerId())
-
     this.state.players.push(player)
 
     socket.emit(
@@ -51,20 +49,14 @@ class Game {
     )
 
     this.broadcastGameStateChanged(socket)
-
     return player.id
   }
 
   disconnectPlayer(socket, playerId) {
     const playerIndex = this.state.players.findIndex(({ id }) => id === playerId)
-    if (playerIndex !== -1) {
-      this.state.players.splice(playerIndex, 1)
-      this.broadcastGameStateChanged(socket)
-    }
-  }
+    if (playerIndex === -1) return
 
-  startGame(socket) {
-    this.state.status = GameStatus.STARTED
+    this.state.players.splice(playerIndex, 1)
     this.broadcastGameStateChanged(socket)
   }
 
