@@ -127,7 +127,13 @@ function handleUserConnected(payload) {
 }
 
 function handleTooManyPlayers() {
-  GameScreen.displayMessage(true, "Too many players")
+  GameScreen.displayMessage(true, "There are too many players at the moment")
+  GameScreen.displayPanel(true)
+  GameScreen.hideStartButton()
+}
+
+function handleGameAlreadyStarted() {
+  GameScreen.displayMessage(true, "The game is already started")
   GameScreen.displayPanel(true)
   GameScreen.hideStartButton()
 }
@@ -189,6 +195,7 @@ GameScreen.setup(ctx)
 
 socket.on(GameEvents.USER_CONNECTED, handleUserConnected)
 socket.on(GameEvents.TOO_MANY_PLAYERS, handleTooManyPlayers)
+socket.on(GameEvents.GAME_ALREADY_STARTED, handleGameAlreadyStarted)
 socket.on(GameEvents.GAME_STATE_CHANGED, handleGameStateChanged)
 
 addEventListener("resize", handleResize)

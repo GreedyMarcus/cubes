@@ -1,6 +1,7 @@
 const GameEvents = Object.freeze({
   USER_CONNECTED: "user-connected",
   TOO_MANY_PLAYERS: "too-many-players",
+  GAME_ALREADY_STARTED: "game-already-started",
   GAME_STATE_UPDATE: "game-state-update",
   GAME_STATE_CHANGED: "game-state-changed"
 })

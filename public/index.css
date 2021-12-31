@@ -1,5 +1,4 @@
 :root {
-  --canvas-bg-color: #141414;
   --button-bg-color-main: #2a64e5;
   --button-bg-color-hover: #1846ad;
   --button-bg-color-active: #1846ad;
@@ -20,7 +19,7 @@ body {
 }
 
 canvas {
-  background-color: var(--canvas-bg-color);
+  background-color: #000;
 }
 
 #overlay {
