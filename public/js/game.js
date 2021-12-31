@@ -24,6 +24,13 @@ class GameScreen {
   }
 
   static resize(ctx, state) {
+    if (!state) {
+      ctx.canvas.width = window.innerWidth
+      ctx.canvas.height = window.innerHeight
+
+      return null
+    }
+
     const temp = GameScreen.convertToRelativeViewport(ctx, state)
 
     ctx.canvas.width = window.innerWidth

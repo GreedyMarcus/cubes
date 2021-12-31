@@ -139,6 +139,8 @@ function handleGameAlreadyStarted() {
 }
 
 function handleGameStateChanged(payload) {
+  if (!playerId) return
+
   const { data } = JSON.parse(payload)
 
   const startedInServer = data.state.status === GameStatus.STARTED
@@ -163,13 +165,11 @@ function handleGameStateChanged(payload) {
 }
 
 function handleResize() {
-  if (state) {
-    state = GameScreen.resize(ctx, state)
-  }
+  state = GameScreen.resize(ctx, state)
 }
 
 function handlePlayerMove({ clientX, clientY }) {
-  if (!state || state.status !== GameStatus.STARTED) return
+  if (!playerId || state.status !== GameStatus.STARTED) return
 
   const playerIndex = state.players.findIndex(({ id }) => id === playerId)
   if (playerIndex === -1) return
@@ -182,7 +182,7 @@ function handlePlayerMove({ clientX, clientY }) {
 }
 
 function handlePlayerAction({ code }) {
-  if (!state || state.status !== GameStatus.STARTED) return
+  if (!playerId || state.status !== GameStatus.STARTED) return
 
   switch (code) {
     case "Space":

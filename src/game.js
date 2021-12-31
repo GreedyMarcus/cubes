@@ -39,13 +39,13 @@ class Game {
   }
 
   connectPlayer(socket) {
-    if (this.state.status === GameStatus.STARTED) {
-      socket.emit(GameEvents.GAME_ALREADY_STARTED)
+    if (this.state.players.length === Game.PLAYER_LIMIT) {
+      socket.emit(GameEvents.TOO_MANY_PLAYERS)
       return
     }
 
-    if (this.state.players.length === Game.PLAYER_LIMIT) {
-      socket.emit(GameEvents.TOO_MANY_PLAYERS)
+    if (this.state.status === GameStatus.STARTED) {
+      socket.emit(GameEvents.GAME_ALREADY_STARTED)
       return
     }
 
@@ -70,15 +70,21 @@ class Game {
     const playerIndex = this.state.players.findIndex(({ id }) => id === playerId)
     if (playerIndex === -1) return
 
-    if (this.state.players.length === 0) {
-      this.state.status = GameStatus.LOBBY
-      Player.restoreAllColors()
-    } else {
-      Player.restoreColor(this.state.players[playerIndex].color)
+    Player.restoreColor(this.state.players[playerIndex].color)
 
-      this.state.players.splice(playerIndex, 1)
-      this.broadcastGameStateChanged(socket)
+    this.state.players.splice(playerIndex, 1)
+
+    if (this.state.players.length === 1 && this.state.status !== GameStatus.FINISHED) {
+      this.state.status = GameStatus.FINISHED
+      this.state.winner = this.state.players[0].color
     }
+
+    if (this.state.players.length === 0 && this.state.status !== GameStatus.LOBBY) {
+      this.state.status = GameStatus.LOBBY
+      this.state.winner = null
+    }
+
+    this.broadcastGameStateChanged(socket)
   }
 
   updateState(socket, payload) {
