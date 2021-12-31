@@ -12,8 +12,9 @@
   },
   "scripts": {
     "minify": "bash minify.sh",
-    "start": "npm run minify && node src/index.js",
-    "dev": "nodemon --ignore public/index.min.js --exec 'npm run minify && node src/index.js'"
+    "start": "node src/index.js",
+    "dev": "nodemon --ignore public/index.min.js --exec 'npm run minify && node src/index.js'",
+    "prepare": "npm run minify"
   },
   "dependencies": {
     "express": "^4.17.2",
