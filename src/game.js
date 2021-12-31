@@ -70,10 +70,15 @@ class Game {
     const playerIndex = this.state.players.findIndex(({ id }) => id === playerId)
     if (playerIndex === -1) return
 
-    Player.restoreColor(this.state.players[playerIndex].color)
+    if (this.state.players.length === 0) {
+      this.state.status = GameStatus.LOBBY
+      Player.restoreAllColors()
+    } else {
+      Player.restoreColor(this.state.players[playerIndex].color)
 
-    this.state.players.splice(playerIndex, 1)
-    this.broadcastGameStateChanged(socket)
+      this.state.players.splice(playerIndex, 1)
+      this.broadcastGameStateChanged(socket)
+    }
   }
 
   updateState(socket, payload) {
