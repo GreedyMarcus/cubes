@@ -63,19 +63,32 @@ class Game {
   updateState(socket, payload) {
     const { data } = JSON.parse(payload)
 
-    this.state = data.state
-    this.broadcastGameStateChanged(socket)
+    if (this.state.status === GameStatus.FINISHED) {
+      this.state = {
+        status: GameStatus.STARTED,
+        winner: null,
+        players: this.state.players.map(({ id }) => new Player(id))
+      }
+
+      this.broadcastGameStateChanged(socket, true)
+    } else {
+      this.state = data.state
+      this.broadcastGameStateChanged(socket, false)
+    }
   }
 
-  broadcastGameStateChanged(socket) {
-    socket.broadcast.emit(
-      GameEvents.GAME_STATE_CHANGED,
-      JSON.stringify({
-        data: {
-          state: this.state
-        }
-      })
-    )
+  broadcastGameStateChanged(socket, toAllPlayer) {
+    const payload = JSON.stringify({
+      data: {
+        state: this.state
+      }
+    })
+
+    if (toAllPlayer) {
+      this.io.emit(GameEvents.GAME_STATE_CHANGED, payload)
+    } else {
+      socket.broadcast.emit(GameEvents.GAME_STATE_CHANGED, payload)
+    }
   }
 
   generatePlayerId() {

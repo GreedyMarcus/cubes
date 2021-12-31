@@ -91,7 +91,5 @@ class GameScreen {
     winner.textContent = playerId ? `${playerId} won` : "Draw"
     winner.style.visibility = display ? "visible" : "hidden"
     winner.style.margin = display ? "8px" : "0px"
-
-    GameScreen.displayPanel(display)
   }
 }

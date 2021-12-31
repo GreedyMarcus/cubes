@@ -11,6 +11,7 @@ function startGame() {
   state.status = GameStatus.STARTED
   updateGameState()
 
+  GameScreen.displayWinner(false)
   GameScreen.displayPanel(false)
   startRendering()
 }
@@ -21,13 +22,11 @@ function startRendering() {
   GameScreen.clear(ctx, !animationId)
 
   state.players.forEach((currentPlayer, _, players) => {
-    if (!animationId) return
     if (!currentPlayer.alive) return
 
     Cube.render(ctx, currentPlayer.cube)
 
     currentPlayer.projectiles.forEach((projectile) => {
-      if (!animationId) return
       if (!projectile.fired) return
 
       Projectile.render(ctx, projectile)
@@ -85,7 +84,10 @@ function checkEndGame() {
   if (alivePlayers.length === 0) state.winner = null
 
   state.status = GameStatus.FINISHED
+
   GameScreen.displayWinner(true, state.winner)
+  GameScreen.displayPanel(true)
+
   stopRendering()
 }
 
@@ -114,12 +116,14 @@ function handleUserConnected(payload) {
   }
 
   if (state.status === GameStatus.STARTED) {
+    GameScreen.displayWinner(false)
     GameScreen.displayPanel(false)
     startRendering()
   }
 
   if (state.status === GameStatus.FINISHED) {
-    GameScreen.displayWinner(state.winner)
+    GameScreen.displayWinner(true, state.winner)
+    GameScreen.displayPanel(true)
   }
 }
 
@@ -130,6 +134,7 @@ function handleGameStateChanged(payload) {
   const startedInLocal = state.status === GameStatus.STARTED
 
   if (startedInServer && !startedInLocal) {
+    GameScreen.displayWinner(false)
     GameScreen.displayPanel(false)
     startRendering()
   }
@@ -139,6 +144,7 @@ function handleGameStateChanged(payload) {
 
   if (finishedInServer && !finishedInLocal) {
     GameScreen.displayWinner(true, data.state.winner)
+    GameScreen.displayPanel(true)
     stopRendering()
   }
 
