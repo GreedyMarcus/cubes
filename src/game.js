@@ -35,7 +35,7 @@ class Game {
   }
 
   connectPlayer(socket) {
-    const player = new Player(this.generatePlayerId())
+    const player = new Player()
     this.state.players.push(player)
 
     socket.emit(
@@ -56,6 +56,8 @@ class Game {
     const playerIndex = this.state.players.findIndex(({ id }) => id === playerId)
     if (playerIndex === -1) return
 
+    Player.restoreColor(this.state.players[playerIndex].color)
+
     this.state.players.splice(playerIndex, 1)
     this.broadcastGameStateChanged(socket)
   }
@@ -64,6 +66,8 @@ class Game {
     const { data } = JSON.parse(payload)
 
     if (this.state.status === GameStatus.FINISHED) {
+      Player.restoreAllColors()
+
       this.state = {
         status: GameStatus.STARTED,
         winner: null,
@@ -89,10 +93,6 @@ class Game {
     } else {
       socket.broadcast.emit(GameEvents.GAME_STATE_CHANGED, payload)
     }
-  }
-
-  generatePlayerId() {
-    return Math.random().toString(36).slice(2)
   }
 }
 

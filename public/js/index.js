@@ -80,7 +80,7 @@ function checkEndGame() {
 
   if (alivePlayers.length >= 2) return
 
-  if (alivePlayers.length === 1) state.winner = alivePlayers[0].id
+  if (alivePlayers.length === 1) state.winner = alivePlayers[0].color
   if (alivePlayers.length === 0) state.winner = null
 
   state.status = GameStatus.FINISHED
