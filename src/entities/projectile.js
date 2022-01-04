@@ -1,16 +1,16 @@
 const { Point } = require("./point")
 
-class Projectile {
-  static DEFAULT_RADIUS = 0.004
-  static DEFAULT_VELOCITY_MULTIPLIER = 5
+const DEFAULT_PROJECTILE_RADIUS = 0.004
+const DEFAULT_PROJECTILE_VELOCITY_MULTIPLIER = 5
 
-  constructor(playerId, color) {
-    this.createdBy = playerId
-    this.radius = Projectile.DEFAULT_RADIUS
+class Projectile {
+  constructor(createdBy, color) {
     this.color = color
-    this.position = new Point(0, 0)
-    this.velocity = new Point(0, 0)
-    this.velocityMultiplier = Projectile.DEFAULT_VELOCITY_MULTIPLIER
+    this.createdBy = createdBy
+    this.radius = DEFAULT_PROJECTILE_RADIUS
+    this.position = new Point()
+    this.velocity = new Point()
+    this.velocityMultiplier = DEFAULT_PROJECTILE_VELOCITY_MULTIPLIER
     this.fired = false
   }
 }

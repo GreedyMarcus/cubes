@@ -1,18 +1,14 @@
 class Point {
-  constructor(x, y) {
+  constructor(x = 0, y = 0) {
     this.x = x
     this.y = y
   }
 
   static generateRandomPoint() {
-    const x = Point.generateRandomCoord()
-    const y = Point.generateRandomCoord()
+    const x = Number((Math.random() * 1).toFixed(1))
+    const y = Number((Math.random() * 1).toFixed(1))
 
     return new Point(x, y)
-  }
-
-  static generateRandomCoord() {
-    return Number((Math.random() * 1).toFixed(1))
   }
 }
 

@@ -1,15 +1,15 @@
 const { Point } = require("./point")
 
-class Cube {
-  static DEFAULT_SIZE = 0.015
-  static DEFAULT_VELOCITY_MULTIPLIER = 3
+const DEFAULT_CUBE_SIZE = 0.015
+const DEFAULT_CUBE_VELOCITY_MULTIPLIER = 3
 
+class Cube {
   constructor(color) {
-    this.size = Cube.DEFAULT_SIZE
+    this.size = DEFAULT_CUBE_SIZE
     this.color = color
     this.position = Point.generateRandomPoint()
-    this.velocity = new Point(0, 0)
-    this.velocityMultiplier = Cube.DEFAULT_VELOCITY_MULTIPLIER
+    this.velocity = new Point()
+    this.velocityMultiplier = DEFAULT_CUBE_VELOCITY_MULTIPLIER
   }
 }
 
