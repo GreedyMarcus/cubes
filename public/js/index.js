@@ -146,22 +146,36 @@ function handleGameStateChanged(payload) {
   const startedInServer = data.state.status === GameStatus.STARTED
   const startedInLocal = state.status === GameStatus.STARTED
 
-  if (startedInServer && !startedInLocal) {
-    GameScreen.displayMessage(false)
-    GameScreen.displayPanel(false)
-    startRendering()
-  }
-
   const finishedInServer = data.state.status === GameStatus.FINISHED
   const finishedInLocal = state.status === GameStatus.FINISHED
+
+  if (startedInServer && !startedInLocal) {
+    state = GameScreen.convertFromRelativeViewport(ctx, data.state)
+
+    GameScreen.displayMessage(false)
+    GameScreen.displayPanel(false)
+
+    startRendering()
+    return
+  }
 
   if (finishedInServer && !finishedInLocal) {
     GameScreen.displayMessage(true, GameScreen.printWinner(data.state.winner))
     GameScreen.displayPanel(true)
+
     stopRendering()
   }
 
+  const playerIndex = data.state.players.findIndex(({ id }) => id === playerId)
+  if (playerIndex === -1) return
+
+  const player = JSON.stringify({ ...state.players[playerIndex] })
+
   state = GameScreen.convertFromRelativeViewport(ctx, data.state)
+  state.players[playerIndex] = {
+    ...JSON.parse(player),
+    alive: data.state.players[playerIndex].alive
+  }
 }
 
 function handleResize() {

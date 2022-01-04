@@ -90,14 +90,10 @@ class Game {
   updateState(socket, payload) {
     const { data } = JSON.parse(payload)
 
-    if (this.state.status === GameStatus.FINISHED) {
-      Player.restoreAllColors()
-
-      this.state = {
-        status: GameStatus.STARTED,
-        winner: null,
-        players: this.state.players.map(({ id }) => new Player(id))
-      }
+    if (this.state.status === GameStatus.FINISHED && data.state.status === GameStatus.STARTED) {
+      this.state.status = GameStatus.STARTED
+      this.state.winner = null
+      this.state.players.forEach((player) => Player.reset(player))
 
       this.broadcastGameStateChanged(socket, true)
     } else {
