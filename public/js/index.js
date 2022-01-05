@@ -2,218 +2,73 @@ const startButton = document.querySelector("#start-button")
 const canvas = document.querySelector("canvas")
 const ctx = canvas.getContext("2d")
 const socket = io()
+const game = new Game()
 
-let animationId = null
-let playerId = null
-let state = null
+Screen.fitWindow(ctx)
 
-function startGame() {
-  state.status = GameStatus.STARTED
-  updateGameState()
+socket.on(GameEvents.PLAYER_CONNECTED, handlePlayerConnected)
+socket.on(GameEvents.PLAYER_LIMIT_REACHED, handlePlayerLimitReached)
+socket.on(GameEvents.GAME_STARTED, handleGameStarted)
+socket.on(GameEvents.GAME_FINISHED, handleGameFinished)
+socket.on(GameEvents.GAME_STATE_CHANGED, handleGameStateChanged)
+socket.on(GameEvents.GAME_ALREADY_STARTED, handleGameAlreadyStarted)
 
-  GameScreen.displayMessage(false)
-  GameScreen.displayPanel(false)
-  startRendering()
-}
+window.addEventListener("resize", handleResizeScreen)
+window.addEventListener("mousemove", handlePlayerMove)
+window.addEventListener("keydown", handlePlayerAction)
+startButton.addEventListener("click", handleStartClick)
 
-function startRendering() {
-  animationId = requestAnimationFrame(startRendering)
-
-  GameScreen.clear(ctx, !animationId)
-
-  state.players.forEach((currentPlayer, _, players) => {
-    if (!currentPlayer.alive) return
-
-    Cube.render(ctx, currentPlayer.cube)
-
-    currentPlayer.projectiles.forEach((projectile) => {
-      if (!projectile.fired) return
-
-      Projectile.render(ctx, projectile)
-
-      players.forEach((player) => {
-        if (player.id === projectile.createdBy || !player.alive) return
-
-        if (Projectile.isCollide(projectile, player.cube)) {
-          player.alive = false
-
-          Projectile.reload(projectile)
-
-          checkEndGame()
-          updateGameState()
-        }
-      })
-    })
-
-    players.forEach((player) => {
-      if (player.id === currentPlayer.id || !player.alive) return
-
-      if (Cube.isCollide(currentPlayer.cube, player.cube)) {
-        currentPlayer.alive = false
-        player.alive = false
-
-        checkEndGame()
-        updateGameState()
-      }
-    })
-  })
-}
-
-function stopRendering() {
-  cancelAnimationFrame(animationId)
-  GameScreen.clear(ctx, true)
-}
-
-function updateGameState() {
-  socket.emit(
-    GameEvents.GAME_STATE_UPDATE,
-    JSON.stringify({
-      data: {
-        state: GameScreen.convertToRelativeViewport(ctx, state)
-      }
-    })
-  )
-}
-
-function checkEndGame() {
-  const alivePlayers = state.players.filter((player) => player.alive)
-
-  if (alivePlayers.length >= 2) return
-  if (alivePlayers.length === 1) state.winner = alivePlayers[0].color
-  if (alivePlayers.length === 0) state.winner = null
-
-  state.status = GameStatus.FINISHED
-
-  GameScreen.displayMessage(true, GameScreen.printWinner(state.winner))
-  GameScreen.displayPanel(true)
-
-  stopRendering()
-}
-
-function fireProjectile() {
-  const playerIndex = state.players.findIndex(({ id }) => id === playerId)
-  if (playerIndex === -1) return
-
-  const projectileIndex = state.players[playerIndex].projectiles.findIndex(({ fired }) => !fired)
-  if (projectileIndex === -1) return
-
-  const projectile = state.players[playerIndex].projectiles[projectileIndex]
-  const cube = state.players[playerIndex].cube
-
-  Projectile.fire(projectile, cube)
-  updateGameState()
-}
-
-function handleUserConnected(payload) {
+function handlePlayerConnected(payload) {
   const { data } = JSON.parse(payload)
-
-  playerId = data.playerId
-  state = GameScreen.convertFromRelativeViewport(ctx, data.state)
-
-  if (state.status === GameStatus.LOBBY) {
-    GameScreen.displayPanel(true)
-  }
-
-  if (state.status === GameStatus.STARTED) {
-    GameScreen.displayMessage(false)
-    GameScreen.displayPanel(false)
-    startRendering()
-  }
-
-  if (state.status === GameStatus.FINISHED) {
-    GameScreen.displayMessage(true, GameScreen.printWinner(state.winner))
-    GameScreen.displayPanel(true)
-  }
+  game.connectPlayer(ctx, socket, data.playerId, data.state)
 }
 
-function handleTooManyPlayers() {
-  GameScreen.displayMessage(true, "There are too many players at the moment")
-  GameScreen.displayPanel(true)
-  GameScreen.hideStartButton()
+function handlePlayerLimitReached() {
+  Screen.displayMessage(true, "There are too many players at the moment")
+  Screen.displayPanel(true)
+  Screen.hideStartButton()
 }
 
-function handleGameAlreadyStarted() {
-  GameScreen.displayMessage(true, "The game is already started")
-  GameScreen.displayPanel(true)
-  GameScreen.hideStartButton()
+function handleGameStarted(payload) {
+  const { data } = JSON.parse(payload)
+  game.startGame(ctx, socket, data.state)
+}
+
+function handleGameFinished(payload) {
+  const { data } = JSON.parse(payload)
+  game.finishGame(ctx, data.state)
 }
 
 function handleGameStateChanged(payload) {
-  if (!playerId) return
-
   const { data } = JSON.parse(payload)
-
-  const startedInServer = data.state.status === GameStatus.STARTED
-  const startedInLocal = state.status === GameStatus.STARTED
-
-  const finishedInServer = data.state.status === GameStatus.FINISHED
-  const finishedInLocal = state.status === GameStatus.FINISHED
-
-  if (startedInServer && !startedInLocal) {
-    state = GameScreen.convertFromRelativeViewport(ctx, data.state)
-
-    GameScreen.displayMessage(false)
-    GameScreen.displayPanel(false)
-
-    startRendering()
-    return
-  }
-
-  if (finishedInServer && !finishedInLocal) {
-    GameScreen.displayMessage(true, GameScreen.printWinner(data.state.winner))
-    GameScreen.displayPanel(true)
-
-    stopRendering()
-  }
-
-  const playerIndex = data.state.players.findIndex(({ id }) => id === playerId)
-  if (playerIndex === -1) return
-
-  const player = JSON.stringify({ ...state.players[playerIndex] })
-
-  state = GameScreen.convertFromRelativeViewport(ctx, data.state)
-  state.players[playerIndex] = {
-    ...JSON.parse(player),
-    alive: data.state.players[playerIndex].alive
-  }
+  game.acceptServerGameState(ctx, data.state)
 }
 
-function handleResize() {
-  state = GameScreen.resize(ctx, state)
+function handleGameAlreadyStarted() {
+  Screen.displayMessage(true, "The game is already started")
+  Screen.displayPanel(true)
+  Screen.hideStartButton()
+}
+
+function handleResizeScreen() {
+  Screen.resize(ctx, game.state)
 }
 
 function handlePlayerMove({ clientX, clientY }) {
-  if (!playerId || state.status !== GameStatus.STARTED) return
-
-  const playerIndex = state.players.findIndex(({ id }) => id === playerId)
-  if (playerIndex === -1) return
-
   const target = { x: clientX, y: clientY }
-  const cube = state.players[playerIndex].cube
-
-  Cube.changeDirection(target, cube)
-  updateGameState()
+  game.movePlayerCube(ctx, socket, target)
 }
 
 function handlePlayerAction({ code }) {
-  if (!playerId || state.status !== GameStatus.STARTED) return
+  if (!game.playerId || game.state.status !== GameStatus.STARTED) return
 
   switch (code) {
     case "Space":
-      fireProjectile()
+      game.fireProjectile(ctx, socket)
       break
   }
 }
 
-GameScreen.setup(ctx)
-
-socket.on(GameEvents.USER_CONNECTED, handleUserConnected)
-socket.on(GameEvents.TOO_MANY_PLAYERS, handleTooManyPlayers)
-socket.on(GameEvents.GAME_ALREADY_STARTED, handleGameAlreadyStarted)
-socket.on(GameEvents.GAME_STATE_CHANGED, handleGameStateChanged)
-
-addEventListener("resize", handleResize)
-addEventListener("mousemove", handlePlayerMove)
-addEventListener("keydown", handlePlayerAction)
-
-startButton.addEventListener("click", () => startGame(socket))
+function handleStartClick() {
+  socket.emit(GameEvents.START_GAME)
+}
